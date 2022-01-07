@@ -10,8 +10,8 @@ import dash
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
-import datetime
 import numpy as np
+import time
 
 
 import streamlit as st
@@ -104,8 +104,9 @@ def create_features_df(df):
     return reduce(lambda df1,df2 : df1.append(df2), inter_df)
 
 def get_list_genres(df) :
-    liste = df.genres.apply(pd.Series).reset_index().melt(id_vars='index').dropna()[['index', 'value']]
-    return liste
+    series = df[df.genres != '0'].genres.apply(eval)   
+    new = pd.Series([x for _list in series for x in _list])
+    return new
 
 def extract_myartist(df):
     my_artist = list(set(df.artistname))
@@ -152,7 +153,13 @@ def get_top5_by_(df,group,column):
 def get_list_features_by_track(df,features):
     return df.merge(features, how='left', on='trackname')
 
+def get_moy_features (df):
+    cols = ["popularity","danceability","energy","loudness","speechiness","instrumentalness",
+              "liveness","valence","tempo"]
+    return df[cols].mean()
 
+def get_all_data(df,features):
+    return df.merge(features, how='left', on=['artistname','trackname'])
 
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              CHARTS
@@ -161,6 +168,16 @@ def get_list_features_by_track(df,features):
 def wordcloud(df):
     # Create and generate a word cloud image:
     wordcloud = WordCloud().generate(' '.join(df))
+
+    # Display the generated image:
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.show()    
+    return st.pyplot()
+
+def wordcloud1(df):
+    # Create and generate a word cloud image:
+    wordcloud = WordCloud(height=410).generate(' '.join(df))
 
     # Display the generated image:
     plt.imshow(wordcloud, interpolation='bilinear')
@@ -234,6 +251,31 @@ def parralel(df):
                                  color_continuous_scale=px.colors.diverging.Tealrose,
                                  color_continuous_midpoint=2)
     return st.plotly_chart(fig)
+
+def scatter_polar(df):
+    fig=px.scatter_polar(df,theta='index',r='value',color='value',title='Spread of different genre popularity according to beats per minute')
+    return st.plotly_chart(fig)
+
+
+def moodgraph(df):
+    st.write('Danceability :')
+    latest_iteration = st.empty()
+    bar = st.progress(df.danceability)
+    st.write('Valence :')
+    latest_iteration = st.empty()
+    bar = st.progress(df.valence)    
+    st.write('Energy :')
+    latest_iteration = st.empty()
+    bar = st.progress(df.energy)
+    st.write('Speechiness :')
+    latest_iteration = st.empty()
+    bar = st.progress(df.speechiness)
+    st.write('Liveness :')
+    latest_iteration = st.empty()
+    bar = st.progress(df.liveness)
+    
+    
+
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              DATAFRAMES
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -285,6 +327,9 @@ top5_track_by_month = get_top5_by_(my_data,'month',['month','trackname'])
 #features.to_csv("features.csv")
 
 features = pd.read_csv("data/features.csv")
+
+new_features = features.drop(['Unnamed: 0','followers','genres','popularity','duration_ms','tempo','liveness','instrumentalness'],axis=1)
+
 
 code = '''def get_features(artist,track):  
     results = sp.search(q='artist:' + artist, type='artist')
@@ -343,7 +388,7 @@ select = st.sidebar.selectbox(
     ("I- Introduction",
      "II- Quick look on the data",
      "III- Analysis",
-     "IV- Prediction")
+     "IV- Song suggestion")
 )
 
     #---------------------------------           Part1                  -------------------------------
@@ -356,7 +401,7 @@ if select == "I- Introduction":
     st.write(par)
     
     # Create and generate a word cloud image:
-    wordcloud(liste_genres.value)
+    wordcloud(liste_genres.values)
     
     st.header("2- Data sources")
     
@@ -462,16 +507,25 @@ if select == "III- Analysis":
     
     if group == 'Overall in 2021':
         
+        st.markdown("##### Top Musics")       
+        
+        all_features = get_list_features_by_track(top5_track,features)
+        barchart(all_features,'duration_min','trackname','artistname','')
+        
         with st.expander("Dropdown if you want to listen my favorite song of the year 👉"):
             st.video("https://www.youtube.com/watch?v=pRweltAO-zg")
         
-        all_features = get_list_features_by_track(top5_track,features)
-        barchart(all_features,'duration_min','trackname','artistname','Top 5 songs / artists')
         
-        wordcloud(get_list_genres(all_features).value)
-        
-        parralel(list_features_for_top5_track)
-              
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("##### Top kind")
+            wordcloud1(get_list_genres(all_features).values)
+
+        with col2:
+            st.markdown("##### Mood")
+            moodgraph(get_moy_features(all_features))
+
         
     elif group == 'By quarter':
         
@@ -481,77 +535,66 @@ if select == "III- Analysis":
         data = get_quarter_df(top5_track_by_quarter,q)
         all_features = get_list_features_by_track(data,features)
         
-        barchart(all_features,'duration_min','trackname','artistname','Top 5 songs / artists by quarter')
+        st.markdown("##### Top Musics")
+        barchart(all_features,'duration_min','trackname','artistname','')
         
-        wordcloud(get_list_genres(all_features).value)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("##### Top kind")
+            wordcloud1(get_list_genres(all_features).values)
+
+        with col2:
+            st.markdown("##### Mood")
+            moodgraph(get_moy_features(all_features))
         
     else: 
         m = st.select_slider('Select a month',options=['1', '2', '3','4','5','6','7','8','9','10','11','12'])
         
-        data = get_month_df(top5_track_by_month,m)
+        data = get_month_df(top5_track_by_month,m)       
+        all_features = get_list_features_by_track(data,features)
         
+        st.markdown("##### Top Musics")
+        barchart(all_features,'duration_min','trackname','artistname','')
         
-        barchart(all_features,'duration_min','trackname','artistname','Top 5 songs / artists by month')
+        col1, col2 = st.columns(2)
         
-        wordcloud(get_list_genres(all_features).value)
-            
+        with col1:
+            st.markdown("##### Top kind")
+            wordcloud1(get_list_genres(all_features).values)
+
+        with col2:
+            st.markdown("##### Mood")
+            moodgraph(get_moy_features(all_features))
+    
+
 
 #---------------------------------           Part4                  -------------------------------
 
-if select == "IV- Prediction":
-    st.header("IV- Prediction")         
+if select == "IV- Song suggestion":
+    st.header("IV- Song suggestion")         
     
-    st.markdown("### Now that we know what my listening habits are, what can we imagine for the next year in terms of daily listening time ?")
+    st.markdown("All credits in this part to the blog [Towards Data Science](%s)."% linkedin)
     
+    st.markdown("**Can we deduce the mood of a listener from his musical data?** \n This is what we are going to try to do with the sounds I listened to in 2021. We will try to characterize the general mood of my year using clustering and supervised learning methods.\n\n")
     
-    cars_df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/imports-85.csv')
+    with st.expander("Before we begin, it is important to define some terms. Dropdown to see the definitions"):
 
-    # Build parcats dimensions
-    categorical_dimensions = ['body-style', 'drive-wheels', 'fuel-type'];
+        st.markdown("**- Danceability :** Measures how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.")
 
-    dimensions = [dict(values=cars_df[label], label=label) for label in categorical_dimensions]
+        st.markdown("**- Energy :** Mesure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. ")
 
-    # Build colorscale
-    color = np.zeros(len(cars_df), dtype='uint8')
-    colorscale = [[0, 'gray'], [1, 'firebrick']]
+        st.markdown("**- Loudness :** The overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typical range between -60 and 0 db.")
 
-    # Build figure as FigureWidget
-    fig = go.FigureWidget(
-        data=[go.Scatter(x=cars_df.horsepower, y=cars_df['highway-mpg'],
-        marker={'color': 'gray'}, mode='markers', selected={'marker': {'color': 'firebrick'}},
-        unselected={'marker': {'opacity': 0.3}}), go.Parcats(
-            domain={'y': [0, 0.4]}, dimensions=dimensions,
-            line={'colorscale': colorscale, 'cmin': 0,
-                  'cmax': 1, 'color': color, 'shape': 'hspline'})
-        ])
+        st.markdown("**- Speechiness :** Detects the presence of spoken words in a track. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech. Values below 0.33 most likely represent an instrumental. ")
 
-    fig.update_layout(
-            height=800, xaxis={'title': 'Horsepower'},
-            yaxis={'title': 'MPG', 'domain': [0.6, 1]},
-            dragmode='lasso', hovermode='closest')
+        st.markdown("**- Valence :** A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).")
 
-    # Update color callback
-    def update_color(trace, points, state):
-        # Update scatter selection
-        fig.data[0].selectedpoints = points.point_inds
-
-        # Update parcats colors
-        new_color = np.zeros(len(cars_df), dtype='uint8')
-        new_color[points.point_inds] = 1
-        fig.data[1].line.color = new_color
-
-    # Register callback on scatter selection...
-    fig.data[0].on_selection(update_color)
-    # and parcats click
-    fig.data[1].on_click(update_color)
-
+    
+    fig = px.histogram(new_features)
     st.plotly_chart(fig)
     
-    #mse_chart(duration_by_day,'date','duration_min')
-    
-    
-    
-   
+    st.balloons()
     
     
     
