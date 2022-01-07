@@ -161,6 +161,12 @@ def get_moy_features (df):
 def get_all_data(df,features):
     return df.merge(features, how='left', on=['artistname','trackname'])
 
+def get_top_max_of(df,feature):
+    return df.sort_values(by=feature, ascending=False).head(3)
+
+def get_top_min_of(df,feature):
+    return df.sort_values(by=feature, ascending=True).head(3)
+
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              CHARTS
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -274,7 +280,14 @@ def moodgraph(df):
     latest_iteration = st.empty()
     bar = st.progress(df.liveness)
     
-    
+def words(df):
+    colors = ['rgb(0,255,42)','rgb(221, 235, 30)','rgb(224, 91, 43)']
+    track = list(df.trackname)
+    artist = list(df.artistname)
+    i=0
+    for name,a in zip(track,artist):
+        st.markdown(f"<h3 style='text-align:center;color:rgb(196, 196, 196);'><span style='font-weight:bolder;color:{colors[i]};font-size:30px;'>{name} </span>: {a}</h3>",unsafe_allow_html=True)
+        i+=1
 
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              DATAFRAMES
@@ -339,6 +352,13 @@ code = '''def get_features(artist,track):
 liste_genres = get_list_genres(features)
 
 total_artist = my_data['artistname'].nunique()
+
+Happy = get_top_max_of(features,'valence')
+Sad = get_top_min_of(features,'valence')
+Energetic = get_top_max_of(features,'energy')
+Dance = get_top_max_of(features,'danceability')
+Discover = get_top_max_of(features,'popularity')
+
 
 
 ################# spotify api / personal data ########################
@@ -574,11 +594,9 @@ if select == "III- Analysis":
 if select == "IV- Song suggestion":
     st.header("IV- Song suggestion")         
     
-    st.markdown("All credits in this part to the blog [Towards Data Science](%s)."% linkedin)
+    st.markdown("**Would you like some song suggestions depending on your current mood? ** \n This is what we are going to try to do with the sounds I listened to in 2021. \n\n")
     
-    st.markdown("**Can we deduce the mood of a listener from his musical data?** \n This is what we are going to try to do with the sounds I listened to in 2021. We will try to characterize the general mood of my year using clustering and supervised learning methods.\n\n")
-    
-    with st.expander("Before we begin, it is important to define some terms. Dropdown to see the definitions"):
+    with st.expander("These are the features used to make our suggestions. Dropdown to see the definitions"):
 
         st.markdown("**- Danceability :** Measures how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.")
 
@@ -591,10 +609,25 @@ if select == "IV- Song suggestion":
         st.markdown("**- Valence :** A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).")
 
     
-    fig = px.histogram(new_features)
-    st.plotly_chart(fig)
-    
-    st.balloons()
+    st.markdown("\n\n\n\n\n\n**WHAT IS YOUR CURRENT MOOD ?**\n\n\n\n\n\n")
+    col1,spac, col2 = st.columns([1,0.2,2.8])
+        
+    with col1:
+        radio = st.radio( "",('Happy', 'Sad', 'Energetic','Dance','Discover'))
+
+    with col2:
+        if radio == 'Happy':
+            words(Happy)
+        elif radio == 'Sad':
+             words(Sad)               
+        elif radio == 'Energetic':
+             words(Energetic)
+        elif radio == 'Dance':
+             words(Dance) 
+        else:
+             words(Discover)        
+
+        st.balloons()
     
     
     
