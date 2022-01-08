@@ -30,6 +30,13 @@ warnings.filterwarnings("ignore")
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
+primaryColor="#F63366"
+backgroundColor="#FFFFFF"
+secondaryBackgroundColor="#F0F2F6"
+textColor="#262730"
+font="sans serif"
+
+
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              FUNCTIONS
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -143,11 +150,11 @@ def get_tracks_by_date(df,date):
 
 def get_top5_by_(df,group,column):
     if group =='':
-         return df.groupby(column).agg({'minplayed':'sum','msplayed' : 'count'}).reset_index().sort_values(['minplayed','msplayed'], ascending=False).rename(columns={'minplayed': 'duration_min','msplayed':'total_count'}).head(5)    
+         return df.groupby(column).agg({'minplayed':'sum','msplayed' : 'count'}).reset_index().sort_values(['msplayed'], ascending=False).rename(columns={'minplayed': 'duration_min','msplayed':'total_count'}).head(5)    
                     
     else :    
         subgroup = df[group].drop_duplicates()
-        new_df = subgroup.apply(lambda var : df[df[group] == var].groupby(column).agg({'minplayed':'sum','msplayed' : 'count'}).reset_index().sort_values(['minplayed','msplayed'], ascending=False).rename(columns={'minplayed': 'duration_min','msplayed':'total_count'}).head(5))    
+        new_df = subgroup.apply(lambda var : df[df[group] == var].groupby(column).agg({'minplayed':'sum','msplayed' : 'count'}).reset_index().sort_values(['msplayed'], ascending=False).rename(columns={'minplayed': 'duration_min','msplayed':'total_count'}).head(5))    
         return reduce(lambda df1,df2 : df1.append(df2), new_df).sort_values([group,'duration_min'], ascending=(True,False))
 
 def get_list_features_by_track(df,features):
@@ -162,10 +169,10 @@ def get_all_data(df,features):
     return df.merge(features, how='left', on=['artistname','trackname'])
 
 def get_top_max_of(df,feature):
-    return df.sort_values(by=feature, ascending=False).head(3)
+    return df.sort_values(by=feature, ascending=False).head(5)
 
 def get_top_min_of(df,feature):
-    return df.sort_values(by=feature, ascending=True).head(3)
+    return df.sort_values(by=feature, ascending=True).head(5)
 
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              CHARTS
@@ -289,6 +296,17 @@ def words(df):
         st.markdown(f"<h3 style='text-align:center;color:rgb(196, 196, 196);'><span style='font-weight:bolder;color:{colors[i]};font-size:30px;'>{name} </span>: {a}</h3>",unsafe_allow_html=True)
         i+=1
 
+def funnel(df):
+    fig = go.Figure(go.Funnel(
+    y = df['artistname'],
+    x = [10,8,6,4,3],
+    text = df['trackname'],
+    opacity = 0.65, marker = {"color": ['#A93226','#6C3483','#58D68D', "#FFC300", "#EDBB99"],
+    "line": {"width": [4, 2, 2, 3, 1, 1]}},
+    connector = {"line": {"color": "royalblue", "dash": "dot", "width": 3}})
+    )
+    return st.plotly_chart(fig)
+        
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              DATAFRAMES
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -458,8 +476,8 @@ if select == "II- Quick look on the data":
         col2.metric(label="No. of tracks", value=total_songs)
         col3.metric(label="Total duration", value=str(total_duration)[0:16])
         col1,col2= st.columns(2)
-        col1.metric(label="From", value=str(max_date))
-        col2.metric(label="To", value=str(min_date))             
+        col1.metric(label="From", value=str(min_date))
+        col2.metric(label="To", value=str(max_date))             
         
         st.markdown(" \n\n ")
         
@@ -608,34 +626,25 @@ if select == "IV- Song suggestion":
 
         st.markdown("**- Valence :** A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).")
 
-    
-    st.markdown("\n\n\n\n\n\n**WHAT IS YOUR CURRENT MOOD ?**\n\n\n\n\n\n")
-    col1,spac, col2 = st.columns([1,0.2,2.8])
+    select = st.selectbox('WHAT IS YOUR CURRENT MOOD ?',('Happy😁', 'Sad🙁', 'Energetic💥','Dance💃','Discover😜'))
+    if select == 'Happy😁':        
+        funnel(Happy)
+    elif select == 'Sad🙁':
+        funnel(Sad)               
+    elif select == 'Energetic💥':
+        funnel(Energetic)
+    elif select == 'Dance💃':
+        funnel(Dance) 
+    else:
+        funnel(Discover)        
+
+    st.balloons()
+      
         
-    with col1:
-        radio = st.radio( "",('Happy', 'Sad', 'Energetic','Dance','Discover'))
-
-    with col2:
-        if radio == 'Happy':
-            words(Happy)
-        elif radio == 'Sad':
-             words(Sad)               
-        elif radio == 'Energetic':
-             words(Energetic)
-        elif radio == 'Dance':
-             words(Dance) 
-        else:
-             words(Discover)        
-
-        st.balloons()
+        
     
     
-    
-    
-    
-    
-    
-    
+      
     
     
     
