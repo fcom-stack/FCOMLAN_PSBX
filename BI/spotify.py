@@ -399,7 +399,7 @@ with left:
     st.title("MY 2021 YEAR ON SPOTIFY")
     
 with right: 
-    spotify_logo = Image.open("image/images.jpeg")
+    spotify_logo = Image.open("image/spotify-logo.png")
     st.image(spotify_logo,width=100)
 
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -612,7 +612,7 @@ if select == "III- Analysis":
 if select == "IV- Song suggestion":
     st.header("IV- Song suggestion")         
     
-    st.markdown("**Would you like some song suggestions depending on your current mood? ** \n This is what we are going to try to do with the sounds I listened to in 2021. \n\n")
+    st.markdown("**Would you like some song suggestions depending on your current mood? ** \n This is what we are going to do with the sounds I listened to in 2021. \n\n")
     
     with st.expander("These are the features used to make our suggestions. Dropdown to see the definitions"):
 
