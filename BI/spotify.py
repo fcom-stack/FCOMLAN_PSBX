@@ -270,7 +270,7 @@ def piechart(df,values,names,title):
     return st.plotly_chart(fig)
 
 def barchart(df,x,y,text,title):
-    fig = px.bar(df, x=x, y=y,color=x,text=text, title=title, width=700)
+    fig = px.bar(df, x=x, y=y,color=x,text=text, title=title, width=700,color_continuous_scale='Bluered_r')
     return st.plotly_chart(fig)
 
 def heatmap(df,x,y,z):   
@@ -315,21 +315,12 @@ def moodgraph(df):
     latest_iteration = st.empty()
     bar = st.progress(df.liveness)
     
-def words(df):
-    colors = ['rgb(0,255,42)','rgb(221, 235, 30)','rgb(224, 91, 43)']
-    track = list(df.trackname)
-    artist = list(df.artistname)
-    i=0
-    for name,a in zip(track,artist):
-        st.markdown(f"<h3 style='text-align:center;color:rgb(196, 196, 196);'><span style='font-weight:bolder;color:{colors[i]};font-size:30px;'>{name} </span>: {a}</h3>",unsafe_allow_html=True)
-        i+=1
 
 def funnel(df):
     fig = go.Figure(go.Funnel(
     y = df['artistname'],
     x = [10,8,6,4,3],
-    text = df['trackname'],
-    opacity = 0.65, marker = {"color": ['#A93226','#6C3483','#58D68D', "#FFC300", "#EDBB99"],
+    text = df['trackname'], marker = {"color": ['#A93226','#6C3483','#58D68D', "#FFC300", "#EDBB99"],
     "line": {"width": [4, 2, 2, 3, 1, 1]}},
     connector = {"line": {"color": "royalblue", "dash": "dot", "width": 3}})
     )
