@@ -12,6 +12,7 @@ from dash import html
 from dash.dependencies import Input, Output
 import numpy as np
 import time
+import base64
 
 
 import streamlit as st
@@ -23,19 +24,12 @@ import seaborn as sns
 from wordcloud import WordCloud 
 from matplotlib import pyplot as plt
 from ipywidgets import widgets
-
+from plotly.subplots import make_subplots
 
 import warnings
 warnings.filterwarnings("ignore")
 st.set_option('deprecation.showPyplotGlobalUse', False)
-
-
-primaryColor="#F63366"
-backgroundColor="#FFFFFF"
-secondaryBackgroundColor="#F0F2F6"
-textColor="#262730"
-font="sans serif"
-
+@st.cache
 
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              FUNCTIONS
@@ -104,6 +98,12 @@ def get_features(artist,track):
             df.duration_ms[0] = features['duration_ms']                
 
     return df
+
+def get_count_track_by_day(df):
+    return df.groupby('date').agg({"trackname": "nunique"}).reset_index()
+
+def get_count_artist_by_day(df):
+    return df.groupby('date').agg({"artistname": "nunique"}).reset_index()
 
 def create_features_df(df): 
     data = df.drop_duplicates(subset=['artistname', 'trackname'], keep="first")
@@ -174,6 +174,26 @@ def get_top_max_of(df,feature):
 def get_top_min_of(df,feature):
     return df.sort_values(by=feature, ascending=True).head(5)
 
+def get_base64(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_background(png_file):
+    bin_str = get_base64(png_file)
+    page_bg_img = '''
+    <style>
+    .stApp {
+    background-image: url("data:image/png;base64,%s"); 
+    background-repeat: no-repeat;
+    background-attachment: scroll; # doesn't work
+    }
+    </style>
+    ''' % bin_str
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+    return
+
+set_background("image/wallpaper.jpeg")
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              CHARTS
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -225,6 +245,14 @@ def time_series(df,x,y,title,x_label,y_label,x_max,y_max):
             type="date"
         )
     )
+    return st.plotly_chart(fig)
+
+def doubleChart(df):
+    fig = make_subplots(rows=1, cols=2)
+    count_track = get_count_track_by_day(df)
+    count_artist = get_count_artist_by_day(df)
+    fig.add_trace(go.Scatter(x=count_track.date, y=count_track.trackname,mode='markers',name='Tracks per day'), row=1, col=1)
+    fig.add_trace(go.Scatter(x=count_artist.date, y=count_artist.artistname,mode='markers',name='Artists per day'), row=1, col=2)    
     return st.plotly_chart(fig)
 
 def histogram(df,x,y,title,x_label,y_label) :
@@ -399,35 +427,41 @@ with left:
     st.title("MY 2021 YEAR ON SPOTIFY")
     
 with right: 
-    spotify_logo = Image.open("image/spotify-logo.png")
+    spotify_logo = Image.open("image/spotify.png")
     st.image(spotify_logo,width=100)
 
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------               SIDEBAR
 #--------------------------------- ---------------------------------  ---------------------------------
        
-st.sidebar.header("Florine COMLAN")   
+st.sidebar.header("MENU")
+   
+select = st.sidebar.selectbox(
+    "Select a feature 👇:",
+    ("I- Introduction",
+     "II- Analysis",
+     "III- Song suggestion")
+)
+
+st.sidebar.header("AUTHOR")
 
 streamlit = "https://docs.streamlit.io"
 
-st.sidebar.write('I built this website in order to show you how you can create a simple visualization project with the [streamlit package](%s). \n\n Find me on my networks to follow my adventures :wink:.'%streamlit)
+st.sidebar.write('Florine COMLAN, I built this website in order to show you how you can create a simple visualization project with the [streamlit package](%s). \n\n Find me on my networks to follow my adventures :wink:.'%streamlit)
 
 linkedin = "https://www.linkedin.com/in/florine-comlan/" 
 github = "https://github.com/fcom-stack"
-       
-st.sidebar.image(Image.open("image/linkedin.png"),width=30)  
-st.sidebar.write(" [My LinkedIn](%s)" % linkedin)
-st.sidebar.image(Image.open("image/github.png"),width=30) 
-st.sidebar.write(" [My Github](%s) \n\n" % github)  
 
+#st.sidebar.markdown("[![Foo](https://upload.wikimedia.org/wikipedia/commons/0/01/LinkedIn_Logo.svg)](https://www.linkedin.com/in/florine-comlan/)") 
     
-select = st.sidebar.selectbox(
-    "SELECT A FEATURE 👇:",
-    ("I- Introduction",
-     "II- Quick look on the data",
-     "III- Analysis",
-     "IV- Song suggestion")
-)
+#st.sidebar.markdown("[![Foo](https://logodownload.org/wp-content/uploads/2019/08/github-logo-11.png)](https://github.com/fcom-stack)") 
+
+
+image = st.sidebar.image(Image.open("image/linkedin.jpeg"),width=120)  
+st.sidebar.write(" [My LinkedIn](%s)" % linkedin)
+st.sidebar.image(Image.open("image/github.png"),width=120) 
+st.sidebar.write(" [My Github](%s)" % github)  
+
 
     #---------------------------------           Part1                  -------------------------------
 
@@ -451,67 +485,46 @@ if select == "I- Introduction":
     st.write(par)
     st.write("[Download Personal Spotify Data Tutorial](%s)" % link1)
     
+    st.markdown(" \n\n ")
+    with st.expander("You can click here to see my spotify data 👉"):
+            st.dataframe(my_data.drop('duration',axis = 1))
+    
     par = 'On the other hand I also used the official Spotify api to complete the list of data I had access to through my personal data. I collected information about the genres of the artists for example I had to listen to in order to make a cross analysis. To access the data provided by the Spotify api, follow the tutorial below:'
     
     st.write(par)
     st.write("[Using Spotify API Tutorial](%s)" % link2)
     
+    st.write("To write the query to the Spotify api to build the following dataframe, use as a key the list of items you listened to coupled with the list of artists related to them")   
+        
+    st.code(code, language='python')
     
-    #---------------------------------           Part2                  -------------------------------
-
-if select == "II- Quick look on the data":
-    
-    st.header("II- Quick look on the data")  
-    
-    select = st.sidebar.selectbox(
-    "SELECT A DATASOURCE👇:",
-    ("1- Personal Spotify Data",
-     "2- API Spotify")
-    )
-    
-    if select == "1- Personal Spotify Data":
-        
-        col1, col2,col3= st.columns([1,1,2])
-        col1.metric(label="No. of artists", value=total_artist)
-        col2.metric(label="No. of tracks", value=total_songs)
-        col3.metric(label="Total duration", value=str(total_duration)[0:16])
-        col1,col2= st.columns(2)
-        col1.metric(label="From", value=str(min_date))
-        col2.metric(label="To", value=str(max_date))             
-        
-        st.markdown(" \n\n ")
-        
-        with st.expander("You can click here to see the raw data first 👉"):
-            st.dataframe(my_data.drop('duration',axis = 1))
-                
-    if select == "2- API Spotify":
-        
-        col1, col2= st.columns(2)
-        col1.metric(label="No. of artists", value=total_artist)
-        col2.metric(label="No. of tracks", value=total_songs)
-                
-        st.write("To write the query to the Spotify api to build the following dataframe, use as a key the list of items you listened to coupled with the list of artists related to them")   
-        
-        st.code(code, language='python')
-        
-        st.markdown(" \n\n ")
-        
-        with st.expander("You can click here to see the raw data first 👉"):
+    with st.expander("You can click here to see the spotify api data 👉"):
             st.dataframe(features)
     
- #---------------------------------           Part3                  -------------------------------
-
-if select == "III- Analysis":
-    st.header("III- Analysis")   
  
-    # Allow use to choose
-    #quarter = st.sidebar.radio("Visualize by quarter",('All','Q1', 'Q2', 'Q3','Q4'))
-    #df_quarter = get_quarter(my_data,quarter)
+ #---------------------------------           Part2                  -------------------------------
+
+if select == "II- Analysis":
+    st.header("II- Analysis")   
+    
+    ################# Key metrics ########################
+
+    col1, col2,col3= st.columns([1,1,2])
+    col1.metric(label="No. of artists", value=total_artist)
+    col2.metric(label="No. of tracks", value=total_songs)
+    col3.metric(label="Total duration", value=str(total_duration)[0:16])
+    col1,col2= st.columns(2)
+    col1.metric(label="From", value=str(min_date))
+    col2.metric(label="To", value=str(max_date))             
+       
+    
     
     ################# Total time spent on Spotify time series ########################
+    
+    st.markdown("### Time spent on spotify per day")
         
     time_series(duration_by_day,'date','duration_min','Total time spent on Spotify :'+str(total_duration)[0:16],'Date','Minutes spent',day_max_duration.values[0],max_duration_by_day) 
-    
+        
     st.markdown("### The highest listening time was hit on "+str(day_max_duration.values[0])+". Let's see the tracks that kept me there that day.")
     
     st.write("\n\n")
@@ -524,10 +537,17 @@ if select == "III- Analysis":
     sunburst(get_tracks_by_date(my_data,start_date).head(10),'artistname','trackname','duration_min')
             
 
+    ################# HITS ON NUNBER OF SONGS LISTENED ########################    
+    
+    st.markdown("### What about the day I reached the highest number of songs listened ?")
+    
+    doubleChart(my_data)
+    
+        
     ################# Habits by something  ########################
     
                 
-    st.markdown("### What about my daily listening habits ?")
+    st.markdown("### And now what about my daily listening habits ?")
     
     group = st.selectbox("Display by :",('Month and day','Weekday and hour'))
     
@@ -607,10 +627,10 @@ if select == "III- Analysis":
     
 
 
-#---------------------------------           Part4                  -------------------------------
+#---------------------------------           Part3                  -------------------------------
 
-if select == "IV- Song suggestion":
-    st.header("IV- Song suggestion")         
+if select == "III- Song suggestion":
+    st.header("III- Song suggestion")         
     
     st.markdown("**Would you like some song suggestions depending on your current mood? ** \n This is what we are going to do with the sounds I listened to in 2021. \n\n")
     
@@ -638,7 +658,6 @@ if select == "IV- Song suggestion":
     else:
         funnel(Discover)        
 
-    st.balloons()
       
         
         
