@@ -441,7 +441,7 @@ streamlit = "https://docs.streamlit.io"
 st.sidebar.write('Florine COMLAN, I built this website in order to show you how you can create a simple visualization project with the [streamlit package](%s). \n\n Find me on my networks to follow my adventures :wink:.'%streamlit)
 
 linkedin = "https://www.linkedin.com/in/florine-comlan/" 
-github = "https://github.com/fcom-stack"
+github = "https://github.com/fcom-stack/PSB-Projects/tree/main/BI"
 
 #st.sidebar.markdown("[![Foo](https://upload.wikimedia.org/wikipedia/commons/0/01/LinkedIn_Logo.svg)](https://www.linkedin.com/in/florine-comlan/)") 
     
