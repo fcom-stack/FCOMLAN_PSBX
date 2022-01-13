@@ -1,9 +1,11 @@
 # Tutoriels
 
-### Hadoop et Spark
+## BIG DATA
+- Hadoop et Spark
+- Packages rmr2 et sparklyr
+- Algorithme génétique
+- SVM
 
-### Packages rmr2 et sparklyr
+## BI
 
-### Algorithme génétique
-
-### SVM
+- Streamlit
