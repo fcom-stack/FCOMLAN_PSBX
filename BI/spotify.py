@@ -193,7 +193,7 @@ def set_background(png_file):
     st.markdown(page_bg_img, unsafe_allow_html=True)
     return
 
-set_background("image/wallpaper.jpeg")
+set_background("picture/wallpaper.jpeg")
 #--------------------------------- ---------------------------------  ---------------------------------
 #---------------------------------              CHARTS
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -418,7 +418,7 @@ with left:
     st.title("MY 2021 YEAR ON SPOTIFY")
     
 with right: 
-    spotify_logo = Image.open("image/spotify.png")
+    spotify_logo = Image.open("picture/spotify.png")
     st.image(spotify_logo,width=100)
 
 #--------------------------------- ---------------------------------  ---------------------------------
@@ -448,9 +448,9 @@ github = "https://github.com/fcom-stack/PSB-Projects/tree/main/BI"
 #st.sidebar.markdown("[![Foo](https://logodownload.org/wp-content/uploads/2019/08/github-logo-11.png)](https://github.com/fcom-stack)") 
 
 
-image = st.sidebar.image(Image.open("image/linkedin.jpeg"),width=120)  
+image = st.sidebar.image(Image.open("picture/linkedin.jpeg"),width=120)  
 st.sidebar.write(" [My LinkedIn](%s)" % linkedin)
-st.sidebar.image(Image.open("image/github.png"),width=120) 
+st.sidebar.image(Image.open("picture/github.png"),width=120) 
 st.sidebar.write(" [My Github](%s)" % github)  
 
 
